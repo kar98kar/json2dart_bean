@@ -9,23 +9,34 @@ APP_TITLE = u'Dart生成'
 class MainFrame(wx.Frame):
     """程序主窗口类，继承自wx.Frame"""
 
-    bean_format = """
-class %s {
-  %s
+    base_bean = """
+abstract class BaseBean {
 
-  %s();
-
-  %s.fromJson(String json) {
+  BaseBean();
+  
+  BaseBean.fromJson(String json) {
     var action = jsonDecode(json);
     _initBean(action);
   }
 
+   BaseBean _initBean(Map map);
+}
+"""
+
+    bean_format = """
+class %s extends BaseBean {
+  %s
+
+  %s();
+
+  @override
   %s _initBean(Map map) {
     %s
     return this;
   }
 }
 """
+
     field_normal_format = "%s %s;"
 
     field_list_format = "List<%s> %s;"
@@ -60,10 +71,16 @@ class %s {
         self.btn_gen = wx.Button(self, -1, u'生成代码', pos=(676, 550), size=(100, 25))
         self.btn_clear = wx.Button(self, -1, u'清空', pos=(566, 550), size=(100, 25))
         self.btn_format = wx.Button(self, -1, u'格式化Json', pos=(676, 293), size=(100, 25))
+        self.btn_copy_base_class = wx.Button(self, -1, u'复制基类', pos=(566, 293), size=(100, 25))
 
         self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear)
         self.btn_format.Bind(wx.EVT_BUTTON, self.on_format)
         self.btn_gen.Bind(wx.EVT_BUTTON, self.on_gen)
+        self.btn_copy_base_class.Bind(wx.EVT_BUTTON, self.on_copy_base_class)
+
+    def on_copy_base_class(self, evt):
+        pyperclip.copy(self.base_bean)
+        wx.MessageBox('已复制到剪切板', 'Info', wx.OK | wx.ICON_INFORMATION)
 
     def on_clear(self, evt):
         self.class_name.Clear()
@@ -87,13 +104,13 @@ class %s {
             codes.reverse()
             self.result.SetValue(''.join(codes))
             pyperclip.copy(''.join(codes))
-            wx.MessageBox('结果已复制到剪切板', 'Info', wx.OK | wx.ICON_INFORMATION)
+            wx.MessageBox('已复制到剪切板', 'Info', wx.OK | wx.ICON_INFORMATION)
         except Exception as e:
             pass
 
     def gen_class_code(self, class_name, fields, assignments):
         return self.bean_format % (class_name, '\n  '.join(fields), class_name,
-                                   class_name, class_name, '\n    '.join(assignments))
+                                   class_name, '\n    '.join(assignments))
 
     def code_gen(self, class_name, json_obj):
         fields = []
